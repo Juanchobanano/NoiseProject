@@ -1,44 +1,48 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Nov  4 22:07:18 2019
-
-@author: Juan Esteban Cepeda
-"""
-
-# Import libraries.
-import pandas as pd
-import numpy as np
-import os
-import random
-
 import folium
-from folium import plugins
-from folium.plugins import HeatMap
+import folium.plugins as plugins
+import numpy as np
 
-# Load audio & GPS files.
-pathFile =  "./coordenadas.csv"
+np.random.seed(3141592)
+initial_data = (
+    np.random.normal(size=(100, 2)) * np.array([[1, 1]]) +
+    np.array([[48, 5]])
+)
 
-df = pd.read_csv(pathFile, delimiter = ";", decimal = ",", float_precision='high')
-df.columns = "registro lat lon".split()
-df = df[["lat", "lon"]]
-df.dropna(inplace = True)
-df["noise"] = 50.6581684651
+move_data = np.random.normal(size=(100, 2)) * 0.01
+
+data = [(initial_data + move_data * i).tolist() for i in range(100)]
+
+weight = 1  # default value
+for time_entry in data:
+    for row in time_entry:
+        row.append(weight)
+        
+        
+m = folium.Map([48., 5.], tiles='stamentoner', zoom_start=6)
+
+hm = plugins.HeatMapWithTime(data)
+hm.add_to(m)
 
 
 
-heat_data = [[row['lat'], row['lon'], row["noise"]] for index, row in df.iterrows()]
 
-for d in heat_data:
-    #print(d, end='\n')
-    if len(d[:2]) != 2:
-        print("error")
-#heat_data = [(row['lat'], row['lon'], row["noise"]) for index, row in df.iterrows()] # , row["Weight"]] 
-
-#print(heat_data)
+from datetime import datetime, timedelta
 
 
+time_index = [
+    (datetime.now() + k * timedelta(1)).strftime('%Y-%m-%d') for
+    k in range(len(data))
+]
 
-map_hooray = folium.Map(location=[4.638594, -74.084442], zoom_start = 16) # , width = 800, height = 480)
-folium.PolyLine(heat_data, maxval = 10, color="red", weight=2.5, opacity=1).add_to(map_hooray)
-HeatMap(line).add_to(map_hooray)
-map_hooray.save("./Mapas/Prueba2.html")
+m = folium.Map([48., 5.], tiles='stamentoner', zoom_start=6)
+
+hm = plugins.HeatMapWithTime(
+    data,
+    index=time_index,
+    auto_play=True,
+    max_opacity=0.3
+)
+
+hm.add_to(m)
+
+m.save("./Mapas/Prueba2.html")
